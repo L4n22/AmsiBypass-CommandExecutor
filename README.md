@@ -15,7 +15,7 @@ g++ -m64 -o happy_hacking.exe -static main.cpp
 ## Important
 
 - It is important to verify that the commands contained in the base64 belong exclusively to PowerShell to ensure their correct execution. 
-- It exclusively uses Invoke-Expression so that the command is executed in the patched powershell, thus preventing a new instance from being created.
+- You should always try to use Invoke-Expression so that the command is executed in the patched powershell, thus avoiding the creation of a new instance.
 
 An example of a command that contains only PowerShell statements and can be base64 encoded:
 
