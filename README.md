@@ -18,7 +18,7 @@ g++ -m64 -o happy_hacking.exe -static main.cpp
 
 ## Important Notes
 
- - Before executing any command, make sure that the command is pure PowerShell.
+ - It is important to verify that any command you run uses only PowerShell to perform its designated tasks.
  - It is recommended to avoid using `powershell.exe <command>` and opt for `Invoke-Expression` instead. By doing so, the command will be executed in the patched PowerShell instance created by the executable.
  - Please note that this project is intended solely for educational purposes and should not be used for malicious activities.
 
