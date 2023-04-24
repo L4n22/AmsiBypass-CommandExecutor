@@ -1,4 +1,4 @@
-# Bypassing AMSI and Command Execution in Executable
+# AMSI Bypass & Command Executor
 
 This project demonstrates how to bypass the anti-malware scanning interface (AMSI) in Windows PowerShell to execute PowerShell commands without being detected by antivirus software.
 
