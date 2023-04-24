@@ -16,7 +16,7 @@ g++ -m64 -o happy_hacking.exe -static main.cpp
 
 - You must check that the commands contained in base64 belong exclusively to PowerShell to ensure their correct execution.
 - You should always try to use Invoke-Expression to make the command run in the patched powershell to avoid creating new powershell instances that are not patched.
-- It only works for Windows 10 for now.
+- At the moment it only works for Windows 10.
 
 An example of a one-liner that contains only PowerShell commands and can be base64 encoded:
 
