@@ -9,7 +9,7 @@ https://user-images.githubusercontent.com/89106058/232936480-b0e4e0d8-d435-449c-
 ## Compilation command
 
 ```powershell
-g++ -m64 -o happy_hacking.exe -static main.cpp
+g++ -m64 -o happy_hacking.exe -static-libgcc main.cpp
 ```
 
 ## Important
