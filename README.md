@@ -13,7 +13,7 @@ In this project, we use a technique that involves patching an existing PowerShel
 To compile the code in this project, use the following command:
 
 ```powershell
-g++ -m64 -o happy_hacking.exe -static -mwindows main.cpp
+g++ -m32 -o happy_hacking.exe -static -mwindows main.cpp
 ```
 
 ## Important Notes
