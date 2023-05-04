@@ -59,7 +59,7 @@ char* get_env(const char* name) {
 
 
 bool patch_amsi(PROCESS_INFORMATION pi) {
-    Sleep(10000);
+    Sleep(20000);
     HANDLE hProcess = OpenProcess(
         PROCESS_VM_OPERATION | PROCESS_VM_WRITE, 
         FALSE, 
