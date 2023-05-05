@@ -28,8 +28,7 @@ int get_length_path(const std::string& path) {
 }
 
 
-LPWSTR string_to_LPWSTR(const std::string& path)
-{
+LPWSTR string_to_LPWSTR(const std::string& path) {
     int bufferLength = get_length_path(path);
     LPWSTR wpath = new WCHAR[bufferLength];
     ZeroMemory(wpath, sizeof(WCHAR) * bufferLength);
